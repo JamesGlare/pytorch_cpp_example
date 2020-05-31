@@ -3,8 +3,8 @@
       {
         "name": "Linux",
         "includePath": ["${workspaceFolder}/**",
-                        "/home/t-jaglad/Coding/libtorch/include",
-                        "/home/t-jaglad/Coding/libtorch/include/torch/csrc/api/include" 
+                        "/ABS/PATH/TO/libtorch/include",
+                        "/ABS/PATH/TO/libtorch/include/torch/csrc/api/include" 
                       ],
         "defines": [],
         "compilerPath": "/usr/bin/g++",
