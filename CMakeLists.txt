@@ -14,8 +14,6 @@ endmacro()
 # Required packages
 # cmake >= 3.1, g++ >= 7, ninja >= 1.10
 # torch 1.5
-# git clone https://github.com/CLIUtils/cmake
-# potentially remove libgtest from libtorch folder
 ###########################################################
 cmake_minimum_required( VERSION 3.1.0 )
 
@@ -26,9 +24,9 @@ cmake_minimum_required( VERSION 3.1.0 )
 ###########################################################
 project(pytorch_cpp VERSION 0.9.0)
 if (MSVC)
-        set(CMAKE_PREFIX_PATH "C:/Users/t-jaglad/Documents/Coding/libtorch-win-shared-with-deps-debug-1.5.0/libtorch")
+        set(CMAKE_PREFIX_PATH "WINDOWS/ABSOLUTE/PATH/TO/libtorch")
 else (MSVC)
-        set(CMAKE_PREFIX_PATH "/home/t-jaglad/Coding/libtorch")
+        set(CMAKE_PREFIX_PATH "UNIX/ABSOLUTE/PATH/TO/libtorch")
 endif (MSVC)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
