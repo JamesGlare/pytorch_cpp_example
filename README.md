@@ -18,3 +18,4 @@ If you want a build with optimizations, change build type to `RELEASE`.
 4. In the same folder, type `cmake --build .`.
 
 Note: If you use vscode, you can use the shortcuts provided in the `.vscode/tasks.json`, by typing Ctrl+Shift+P and `Tasks:Run Tasks`->`Configure Debug` etc.
+For C++ intellisense, change the `includepath` in `.vscode/c_cpp_properties.json` to libtorch folder.
