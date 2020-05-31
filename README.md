@@ -1,10 +1,9 @@
-# Minimal Torch-C++ Frontend example
+# Minimal Torch-1.5-C++ Frontend Example
 
 This repo contains a minimal cmake-based torch-C++ compile environment for Windows and Linux.
 The repo relies on the awesome CLIUtils/cmake repository for including googletest for unit testing.
 There is a pretty good tutorial for a minimal torch C++ build on `https://pytorch.org/cppdocs/installing.html`.
 
- 
 
 ## Setup
 1. Make sure you have `cmake>=3.1` and `g++ >= 5` or a new version of `msvc` installed.
