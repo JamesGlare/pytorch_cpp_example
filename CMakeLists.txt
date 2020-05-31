@@ -26,7 +26,7 @@ project(pytorch_cpp VERSION 0.9.0)
 if (MSVC)
         set(CMAKE_PREFIX_PATH "WINDOWS/ABSOLUTE/PATH/TO/libtorch")
 else (MSVC)
-        set(CMAKE_PREFIX_PATH "UNIX/ABSOLUTE/PATH/TO/libtorch")
+        set(CMAKE_PREFIX_PATH "/home/t-jaglad/Coding/libtorch")
 endif (MSVC)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
