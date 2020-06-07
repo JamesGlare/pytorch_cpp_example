@@ -9,6 +9,15 @@ macro(print_all_with prefix)
     endforeach()
     message(STATUS "--------------------------------------------------------------}")
 endmacro()
+
+macro(init_cmake_submodule)
+    file(GLOB CMAKE_FILES cmake)
+    list(LENGTH CMAKE_FILES N_CMAKE_FILES)
+    if(N_CMAKE_FILES EQUAL 0)
+        COMMAND git submodule init
+        COMMAND git submodule update
+    endif()
+endmacro()
 ###########################################################
 ## Main Program
 # Required packages
@@ -75,6 +84,7 @@ set( CMAKE_VERBOSE_MAKEFILE ON ) # we want to see compiler flags
 ###########################################################
 ## Unit Tests
 ###########################################################
+init_cmake_submodule()
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 # Remove main from src
 list(REMOVE_ITEM ALL_SRCS "${PROJECT_SOURCE_DIR}/src/main.cpp")
