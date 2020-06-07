@@ -8,21 +8,14 @@
  * 3. Intellisense (c_cpp_properties -> two include paths for pytorch)
  */ 
 
-// 1.start cmake project initially with Cmake Quick Start
-// build with CTRL+Shift+P -> CMake build
-// and use the build script to configure
-// cmake should be called with the following option
-// from .build
-// cmake -DCMAKE_PREFIX_PATH=/home/james/Coding/libtorch ..
-// then you go make all, make clean or else from there.
-// Trick: if you *want* to see assembly
+// If you *want* to see assembly
 // just go make src/main.s
 // Create your own tasks in vscode
 // https://code.visualstudio.com/Docs/editor/tasks
 
-// 2. For debugging, use the gbp + vscode
+// For debugging, use the gbp + vscode
 // need to have compiled in debug mode
-// make sure you've set up launch.json
+// make sure you've checked up launch.json
 using namespace torch::indexing;
 
 auto train_model(models::torch_ptr model,
@@ -46,8 +39,6 @@ auto train_model(models::torch_ptr model,
                      << " | Loss: " << loss.item<float>() << '\n';
        }
     }
-    torch::save(model, save_path);
-    std::cout << "Model fully trained and saved at " << save_path << '\n';
 }
 auto test_model(models::torch_ptr model,
                 const uint32_t n_sample,
@@ -76,11 +67,12 @@ auto main(int, char**) -> int {
     utils::explain(mynet);
 
     // check if anything gets copied
-    // since forward works via value semantics
     auto a = torch::ones({1000, 2}); // [batch, n_in]
-    auto b = std::move(mynet(a)); // is this the same underlying object?
-    b[0][1] = 42;
-    std::cout << "a[0,1]== " << a[0][1] << ", b[0][1] == " << b[0][1] << '\n'; // compare with forward(torch::Tensor&)
+    auto b = a;
+    auto c(a);
+    
+    a[0][1] = 42;
+    std::cout << "b[0,1]== " << b[0][1].item<float>() << ", c[0][1] == " << c[0][1].item<float>() << '\n'; // compare with forward(torch::Tensor&)
     // *********************************************************************************
     const std::string save_path{"./net.pt"};
     
