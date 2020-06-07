@@ -11,11 +11,13 @@ macro(print_all_with prefix)
 endmacro()
 
 macro(init_cmake_submodule)
-    file(GLOB CMAKE_FILES cmake)
+    message(STATUS "Checking if cmake submodule is present...")
+    file(GLOB CMAKE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/cmake/*")
     list(LENGTH CMAKE_FILES N_CMAKE_FILES)
     if(N_CMAKE_FILES EQUAL 0)
-        COMMAND git submodule init
-        COMMAND git submodule update
+        message(STATUS "Git submodule initialization")
+        execute_process(COMMAND git submodule init)
+        execute_process(COMMAND git submodule update)
     endif()
 endmacro()
 ###########################################################
@@ -35,7 +37,7 @@ project(pytorch_cpp VERSION 0.9.0)
 if (MSVC)
         set(CMAKE_PREFIX_PATH "WINDOWS/ABSOLUTE/PATH/TO/libtorch")
 else (MSVC)
-        set(CMAKE_PREFIX_PATH "/home/t-jaglad/Coding/libtorch")
+        set(CMAKE_PREFIX_PATH "/home/james/Coding/libtorch")
 endif (MSVC)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
