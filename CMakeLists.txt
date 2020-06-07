@@ -72,10 +72,9 @@ file(GLOB ALL_TESTS
         "${PROJECT_SOURCE_DIR}/test/*.cpp"
         )
 
-add_executable( "${PROJECT_NAME}" ${ALL_SRCS}) ## make sure to include all src files
+add_executable("${PROJECT_NAME}" ${ALL_SRCS}) ## make sure to include all src files
 target_link_libraries("${PROJECT_NAME}" ${TORCH_LIBRARIES})
 ## Target Properties and Linking
-set_property(TARGET "${PROJECT_NAME}" PROPERTY CXX_STANDARD 14)
 if (MSVC)
   file(GLOB TORCH_DLLS "${TORCH_INSTALL_PREFIX}/lib/*.dll")
   add_custom_command(TARGET ${PROJECT_NAME}
