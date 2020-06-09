@@ -1,5 +1,5 @@
+#include <functional>
 #include "evolve.h"
-
 namespace evolve {
     using namespace torch::indexing;
 
@@ -39,16 +39,12 @@ namespace evolve {
 
     // ********************************************************************************************
     Species::Species(std::vector<uint32_t>&& _state) : state(_state) {}
-
-    auto Species::init_random(uint32_t max_size, uint32_t low, uint32_t high) -> Species {
+    Species::Species(uint32_t max_size, uint32_t low, uint32_t high) {
         // 0. determine size
         auto size = utils::randint(1, max_size);
-        // 1 Crate vector with that size
-        std::vector<uint32_t> state(size);
-        // 2 fill with randint values
-        std::generate(state.begin(), state.end(), [low, high](){return utils::randint(low, high);});
-        // 3 create species instance
-        return Species(std::move(state));
+        // 1 Create vector with that size
+        for(uint32_t i = 0; i < size; ++i)
+            state.emplace_back(utils::randint(low, high));
     }
 
     auto Species::breed(const Species& mother, const Species& father) -> Species {
@@ -63,19 +59,18 @@ namespace evolve {
         } 
         // the child has the average size of its parents
         uint32_t n_child = (n_father + n_mother)/2;
-        std::vector<uint32_t> child_state(n_child);
-        std::uint32_t i = 0;
-        for(auto&s : child_state) { 
+        decltype(father.state) child_state;
+
+        for(uint32_t i = 0; i < n_child; ++i) { 
             if (i < shallow_parent->state.size()){
                 if (utils::randint(0,2)) {
-                    s = shallow_parent->state[i];
+                    child_state.emplace_back(shallow_parent->state[i]);
                 } else {
-                    s= deep_parent->state[i];
+                    child_state.emplace_back(deep_parent->state[i]);
                 }
             } else{
-                s = deep_parent->state[i];
+                child_state.emplace_back(deep_parent->state[i]);
             }
-            ++i;
         }
         return Species(std::move(child_state));
     }
@@ -104,10 +99,12 @@ namespace evolve {
     }
     // ******************************************************************************************** 
     auto rewrite_model_pool(const std::vector<Species>& state_pool, 
-                         std::vector<models::model_ptr>& model_pool) -> void {
+                         std::vector<models::model_ptr>& model_pool,
+                         std::function<models::model_ptr(const std::vector<uint32_t>&)> model_ctor
+                         ) -> void {
         std::transform(state_pool.begin(), state_pool.end(), model_pool.begin(),
-                      [](const Species& s)-> models::model_ptr { 
-                          return models::make_MLP(s.get_state());
+                      [model_ctor](const Species& s)-> models::model_ptr { 
+                          return model_ctor(s.get_state());
                     }
         );
     }
@@ -117,20 +114,19 @@ namespace evolve {
                  uint32_t min_layer_size, 
                  uint32_t max_layer_size,
                  uint32_t max_rounds,
-                 uint32_t population
+                 uint32_t population,
+                 std::function<models::model_ptr(const std::vector<uint32_t>&)> model_ctor = models::make_MLP
                  ) -> std::vector<models::model_ptr> {
-        // 1. Initialize random propulation
         
+        // 1. Initialize random propulation
         std::vector<Species> state_pool;
-        std::generate_n(std::back_inserter(state_pool), population, 
-                        [max_layers, min_layer_size, max_layer_size]() -> Species {
-                            return Species::init_random(max_layers, min_layer_size, max_layer_size);
-                            }
-                        );
+        for(uint32_t i = 0; i< population; ++i)
+            state_pool.emplace_back(max_layers, min_layer_size, max_layer_size);
+
         // 2. fill model pool
         std::vector<models::model_ptr> model_pool;
         for(const Species& s : state_pool){
-            model_pool.emplace_back(models::make_MLP(s.get_state()));
+            model_pool.push_back(model_ctor(s.get_state()));
         }
 
         // 3. Do the actual evolution loop
@@ -144,7 +140,7 @@ namespace evolve {
               && avg_loss > target_avg_loss) {
             // sort model vector
             
-            rewrite_model_pool(state_pool, model_pool);
+            rewrite_model_pool(state_pool, model_pool, model_ctor);
             uint32_t i = 0;
             for(auto& model : model_pool) {
                 // this is where we want to do threading

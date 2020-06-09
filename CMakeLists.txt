@@ -1,3 +1,6 @@
+###################################################################################################
+## Useful Macros
+###################################################################################################
 macro(print_all_with prefix)
     message(STATUS "print variables with ${prefix} ------------------------------------------{")
     get_cmake_property(_variableNames VARIABLES)
@@ -20,23 +23,29 @@ macro(init_cmake_submodule)
         execute_process(COMMAND git submodule update)
     endif()
 endmacro()
-###########################################################
+###################################################################################################
 ## Main Program
 # Required packages
 # cmake >= 3.1, g++ >= 7, ninja >= 1.10
 # torch 1.5
-###########################################################
+###################################################################################################
 cmake_minimum_required( VERSION 3.1.0 )
+
+###################################################################################################
+## CLANG/CLANG++
+## comment out or in as you wish, change the path if necessary
+set(CMAKE_C_COMPILER "/usr/local/clang_9.0.0/bin/clang")
+set(CMAKE_CXX_COMPILER "/usr/local/clang_9.0.0/bin/clang++")
+
+## Set standard everywhere to C++14
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-###########################################################
-## CLANG/CLANG++
-#set(CMAKE_C_COMPILER "/usr/bin/clang-6.0")
-#set(CMAKE_CXX_COMPILER "/usr/bin/clang++-6.0")
-###########################################################
+## Set Project_Name and Version
 project(pytorch_cpp VERSION 0.9.0)
+
+## Path to Libtorch - supports separate paths if cross-platform project
 if (MSVC)
         set(CMAKE_PREFIX_PATH "WINDOWS/ABSOLUTE/PATH/TO/libtorch")
 else (MSVC)
@@ -45,7 +54,8 @@ endif (MSVC)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Torch REQUIRED)
-# Compiler Flags
+
+## Compiler Flags
 if (MSVC)
         set( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Zi /Wall /MP ${TORCH_CXX_FLAGS}" )
         set( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING")
@@ -57,7 +67,8 @@ else (MSVC)
         set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3" )
         set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${TORCH_CXX_FLAGS}" )
 endif (MSVC)
-# Include source, header, and test source files
+
+## Include source, header, and test source files
 include_directories(
                     "${PROJECT_SOURCE_DIR}/inc"
                     "${PROJECT_SOURCE_DIR}/src" 
@@ -85,9 +96,9 @@ if (MSVC)
 endif (MSVC)
 set( CMAKE_VERBOSE_MAKEFILE ON ) # we want to see compiler flags
 
-###########################################################
-## Unit Tests
-###########################################################
+###################################################################################################
+## GoogleTest for Unit Tests
+###################################################################################################
 init_cmake_submodule()
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 # Remove main from src
