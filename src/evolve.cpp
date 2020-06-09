@@ -1,8 +1,9 @@
 #include "evolve.h"
+
 namespace evolve {
     using namespace torch::indexing;
 
-    auto train_model(models::torch_ptr model,
+    auto train_model(models::model_ptr model,
                     const config::TrainConfig& config
                     ) -> void {
         model->train();
@@ -20,7 +21,7 @@ namespace evolve {
     }
 
 
-    auto score_model(models::torch_ptr model,
+    auto score_model(models::model_ptr model,
                      const config::EvalConfig& config
                     ) -> std::vector<float> {
         model->eval();
@@ -34,5 +35,48 @@ namespace evolve {
             losses.push_back(loss.item<float>());
         }
         return losses;
+    }
+
+    // ********************************************************************************************
+    Species::Species(std::vector<uint32_t>&& _state) : state(_state) {}
+    auto Species::init_random(uint32_t max_size, uint32_t low, uint32_t high) -> Species {
+        // 0. determine size
+        auto size = utils::randint(1, max_size);
+        // 1 Crate vector with that size
+        std::vector<uint32_t> state(size);
+        // 2 fill with randint values
+        std::generate(state.begin(), state.end(), [low, high](){return utils::randint(low, high);});
+        // 3 create species instance
+        return Species(std::move(state));
+    }
+    auto Species::breed(const Species& mother, const Species& father) -> Species {
+        const auto n_father = father.state.size();
+        const auto n_mother = mother.state.size();
+        if (n_father < n_mother) {
+            auto shallow_parent = father;
+            auto deep_parent = mother;
+        } else {
+            auto shallow_parent = mother;
+            auto deep_parent = father;
+        }
+        uint32_t n_child = (n_father + n_mother)/2;
+        std::vector<uin32_t> child_state(n_child);
+        std::generate(child_state.begin(), child_state.end(),
+            [father.state, mother.state](){ 
+                                        if(utils::randint(0,2)){
+                                            
+                                        }
+             });
+    }
+    // ******************************************************************************************** 
+
+    auto evolve( float target_avg_loss,
+                 uint32_t max_layers, 
+                 uint32_t min_layer_size, 
+                 uint32_t max_layer_size,
+                 uint32_t max_rounds 
+                 ) -> std::vector<models::model_ptr> {
+        // 1. Initialize random propulation
+
     }
 }

@@ -19,25 +19,6 @@
 // make sure you've checked up launch.json
 
 auto main(int, char**) -> int {
-    auto mynet = models::MLP({2, 100, 2}); //models::make_MLP({2, 100, 2}); // you want to have your net class on the heap -> threads etc
-    utils::explain(mynet);
-
-    // check if anything gets copied
-    auto a = torch::ones({1000, 2}); // [batch, n_in]
-    auto b = a;
-    auto c(a);
     
-    a[0][1] = 42;
-    std::cout << "b[0,1]== " << b[0][1].item<float>() << ", c[0][1] == " << c[0][1].item<float>() << '\n'; // compare with forward(torch::Tensor&)
-    // *********************************************************************************
-    const std::string save_path{"./net.pt"};
-    
-    const uint32_t n_sample = 10000;
-    const uint32_t n_batch = 32;
-    const double lr = 1e-3;
-    auto model = models::make_MLP({2,200,2});
-
-    train_model(model, save_path, n_sample, n_batch, lr);
-    test_model(model, 10, 10, std::cout);
     return EXIT_SUCCESS;
 }

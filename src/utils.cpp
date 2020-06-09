@@ -1,6 +1,6 @@
-#include "utils.h"
 #include <math.h>
-
+#include <stdlib.h>
+#include "utils.h"
 
 namespace utils {
     /*
@@ -37,5 +37,10 @@ namespace utils {
     auto func(const torch::Tensor& x, double std) -> torch::Tensor {
         auto noise = std*torch::rand_like(x);
         return torch::sin(M_PI*x) + noise;
+    }
+
+    auto randint(uint32_t min_inc, uint32_t max_exc) -> uint32_t {
+        // make sure you've set the seed using srand(int seed)
+        return min_inc + rand() % max_exc;
     }
 }

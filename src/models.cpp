@@ -30,7 +30,7 @@ namespace models{
         return output;
     }
 
-    auto make_MLP(const std::vector<size_t>& layer_widths) -> torch_ptr {
+    auto make_MLP(const std::vector<size_t>& layer_widths) -> model_ptr {
         return std::make_shared<MLP>(layer_widths);
     }
 }

@@ -14,7 +14,7 @@ namespace models {
   };
 
   // declare a shorthand for model pointers
-  typedef std::shared_ptr<DLModel> torch_ptr;
+  typedef std::shared_ptr<DLModel> model_ptr;
   typedef std::unique_ptr<DLModel> u_torch_ptr;
 
   struct MLP : DLModel {
@@ -37,7 +37,7 @@ namespace models {
     const size_t outsize;
   };
 
-  torch_ptr make_MLP(const std::vector<size_t>&);
+  model_ptr make_MLP(const std::vector<size_t>&);
 
 }
 //TORCH_MODULE(MyNet); // add the name of the Value-ref'd class you want
