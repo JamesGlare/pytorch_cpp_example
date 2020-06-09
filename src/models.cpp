@@ -2,10 +2,10 @@
 
 namespace models{
 
-    MLP::MLP(const std::vector<size_t>& layer_widths) : 
+    MLP::MLP(const std::vector<uint32_t>& layer_widths) : 
         insize{layer_widths.front()}, outsize{layer_widths.back()}
     {
-        size_t l = 0;
+        uint32_t l = 0;
         for(auto it = layer_widths.cbegin(); 
                 it < layer_widths.cend() -1; ++it) {
             const auto n = *it, m = *(it+1);
@@ -30,7 +30,7 @@ namespace models{
         return output;
     }
 
-    auto make_MLP(const std::vector<size_t>& layer_widths) -> model_ptr {
+    auto make_MLP(const std::vector<uint32_t>& layer_widths) -> model_ptr {
         return std::make_shared<MLP>(layer_widths);
     }
 }

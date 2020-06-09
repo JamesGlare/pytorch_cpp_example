@@ -9,8 +9,8 @@ namespace models {
     /* abstract virtual base class
      */
     virtual auto forward(torch::Tensor&) -> torch::Tensor = 0;
-    virtual auto get_in_size() -> const size_t = 0;
-    virtual auto get_out_size() -> const size_t = 0; 
+    virtual auto get_in_size() -> const uint32_t = 0;
+    virtual auto get_out_size() -> const uint32_t = 0; 
   };
 
   // declare a shorthand for model pointers
@@ -18,26 +18,26 @@ namespace models {
   typedef std::unique_ptr<DLModel> u_torch_ptr;
 
   struct MLP : DLModel {
-    MLP(const std::vector<size_t>&);
+    MLP(const std::vector<uint32_t>&);
     
     auto operator()(torch::Tensor&) -> torch::Tensor;
 
     auto forward(torch::Tensor&) -> torch::Tensor override;
 
-    auto inline get_in_size() -> const size_t override {
+    auto inline get_in_size() -> const uint32_t override {
       return insize;
     };
 
-    auto inline get_out_size() -> const size_t override {
+    auto inline get_out_size() -> const uint32_t override {
       return outsize;
     };
 
     std::vector<torch::nn::Linear> layers{};
-    const size_t insize;
-    const size_t outsize;
+    const uint32_t insize;
+    const uint32_t outsize;
   };
 
-  model_ptr make_MLP(const std::vector<size_t>&);
+  model_ptr make_MLP(const std::vector<uint32_t>&);
 
 }
 //TORCH_MODULE(MyNet); // add the name of the Value-ref'd class you want
