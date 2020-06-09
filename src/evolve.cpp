@@ -52,21 +52,30 @@ namespace evolve {
     auto Species::breed(const Species& mother, const Species& father) -> Species {
         const auto n_father = father.state.size();
         const auto n_mother = mother.state.size();
-        if (n_father < n_mother) {
-            auto shallow_parent = father;
-            auto deep_parent = mother;
-        } else {
-            auto shallow_parent = mother;
-            auto deep_parent = father;
-        }
+
+        auto shallow_parent = std::make_unique<Species>(father);
+        auto deep_parent = std::make_unique<Species>(mother);
+
+        if (n_father > n_mother) {
+            shallow_parent.swap(deep_parent);
+        } 
+        // the child has the average size of its parents
         uint32_t n_child = (n_father + n_mother)/2;
-        std::vector<uin32_t> child_state(n_child);
-        std::generate(child_state.begin(), child_state.end(),
-            [father.state, mother.state](){ 
-                                        if(utils::randint(0,2)){
-                                            
-                                        }
-             });
+        std::vector<uint32_t> child_state(n_child);
+        std::uint32_t i = 0;
+        for(auto&s : child_state) { 
+            if (i < shallow_parent->state.size()){
+                if (utils::randint(0,2)) {
+                    s = shallow_parent->state[i];
+                } else {
+                    s= deep_parent->state[i];
+                }
+            } else{
+                s = deep_parent->state[i];
+            }
+            ++i;
+        }
+        return Species(std::move(child_state));
     }
     // ******************************************************************************************** 
 
