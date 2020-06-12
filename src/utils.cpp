@@ -20,10 +20,11 @@ namespace utils {
         int64_t summed_sizes = 0, temp = 0;
         for(const auto& p : net.named_parameters()){
             temp = total_size(p.value());
-            std::cout<< p.key() << " contains "<< temp << " ...\n";
+            
             summed_sizes += temp;
         }
-        std::cout << "\n\t=> TOTAL "<< summed_sizes << " parameters." << std::endl;
+        auto depth = net.named_parameters().size()/2;
+        std::cout << "Depth: " << depth << " | Total: "<< summed_sizes << std::endl;
     }
     auto generate_xy(const uint32_t n_batch, 
                      const uint32_t n_dim,

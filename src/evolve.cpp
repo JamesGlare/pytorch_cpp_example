@@ -1,6 +1,7 @@
 #include <functional>
 #include <iostream>
 #include "evolve.h"
+#include <thread>
 
 namespace evolve {
     using namespace torch::indexing;
@@ -26,7 +27,7 @@ namespace evolve {
 
     auto score_model(models::model_ptr model,
                      std::function<torch::Tensor(const torch::Tensor&)> func,
-                     const config::EvalConfig& config
+                     const config::TestConfig& config
                     ) -> std::vector<float> {
         model->eval();
         std::vector<float> losses;
@@ -107,28 +108,31 @@ namespace evolve {
         return Species(std::move(child_state));
     }
 
-    auto Species::mutate(double p_depth_change = 0.2, double std = 0.1) -> void {
+    auto Species::mutate(double p_depth_change, double std) -> void {
         // add layer?
-        uint32_t inv_p = 1.0/p_depth_change;
-        if(utils::randint(0, inv_p) == 0) { // 1/3 chance of changing length
-            if(utils::randint(0,2)==0){
-              if(this->state.size() > 2)
-                this->state.pop_back();
-            } else {
-                this->state.push_back(state.back()); // just duplicate value from back
+        if (p_depth_change > 0.){
+            uint32_t inv_p = 1.0/p_depth_change;
+            if(utils::randint(0, inv_p) == 0) { // 1/3 chance of changing length
+                if(utils::randint(0,2)==0){
+                if(this->state.size() > 2)
+                    this->state.pop_back();
+                } else {
+                    this->state.push_back(state.back()); // just duplicate value from back
+                }
             }
         }
-        // determine variation
-        for (auto& s : this->state){
-            uint32_t min = std::max((1.-std)*this->state.size(),0.);
-            uint32_t max = (1.+std)*this->state.size();
-            s = utils::randint(min, max);
+        if ( std > 0.){
+            // determine variation
+            for (auto& s : this->state){
+                uint32_t min = std::max((1.-std)*this->state.size(),0.);
+                uint32_t max = (1.+std)*this->state.size();
+                s = utils::randint(min, max);
+            }
         }
     }
 
     auto evolution_step(std::vector<Species>& state_pool,
-                        double pchange, double std,
-                        uint32_t max_layers, uint32_t min_layer_size, uint32_t max_layer_size
+                        const config::EvolConfig& evol_config
                         ) -> void {
         // assumes score, reversed-order (highest score states first)
         uint32_t middle = state_pool.size()/2;
@@ -140,14 +144,17 @@ namespace evolve {
         }
         // mutate everyone except the last one which gets redrawn anyway
         std::for_each(state_pool.begin(), state_pool.end()-1, 
-            [pchange, std](Species& s) -> void { 
-                    s.mutate(pchange, std);
+            [&evol_config](Species& s) -> void { 
+                    s.mutate(evol_config.pchange, evol_config.std);
             });
-        for(uint32_t i =0; i< state_pool.size()-1; ++i){
-            state_pool[i].mutate(pchange, std);
+        for(uint32_t i = 0; i < state_pool.size()-1; ++i){
+            double T = i/double(state_pool.size()-1);
+            state_pool[i].mutate(T*evol_config.pchange, T*evol_config.std);
         }
         // the worst state is just redrawn
-        state_pool.back() = Species(max_layers, min_layer_size, max_layer_size);
+        state_pool.back() = Species(evol_config.max_layers, 
+                                    evol_config.min_layer_size, 
+                                    evol_config.max_layer_size);
     }
     // ******************************************************************************************** 
     auto rewrite_model_pool(const std::vector<Species>& state_pool, 
@@ -161,31 +168,24 @@ namespace evolve {
         );
     }
     
-    auto evolve( float target_avg_loss,
-                 uint32_t max_layers, 
-                 uint32_t min_layer_size, 
-                 uint32_t max_layer_size,
-                 uint32_t max_rounds,
-                 uint32_t population,
-                 double pchange,
-                 double std,
-                 uint32_t n_dim_in,
-                 uint32_t n_dim_out,
-                 std::function<torch::Tensor(const torch::Tensor&)> target,
-                 std::function<models::model_ptr(const std::vector<uint32_t>&)> model_ctor
+    auto evolve(  float target_avg_loss,
+                  const config::EvolConfig& evol_config,
+                  const config::TrainConfig& train_config,
+                  const config::TestConfig& test_config,
+                  uint32_t n_dim_in,
+                  uint32_t n_dim_out,
+                  std::function<torch::Tensor(const torch::Tensor&)> target,
+                  std::function<models::model_ptr(const std::vector<uint32_t>&)> model_ctor
                  ) -> std::vector<models::model_ptr> {
-        std::cout <<"Evolution run with "<< population << " models..." << '\n';
         // 1. Initialize random propulation
         std::vector<Species> state_pool;
-        for(uint32_t i = 0; i < population; ++i)
-            state_pool.emplace_back(max_layers, min_layer_size, max_layer_size);
+        for(uint32_t i = 0; i < evol_config.population; ++i)
+            state_pool.emplace_back(evol_config.max_layers, evol_config.min_layer_size, evol_config.max_layer_size);
         // pin input and output dimensions
         std::for_each(state_pool.begin(), state_pool.end(), 
                         [n_dim_in, n_dim_out](Species& s) { s.fix_dimension(n_dim_in, n_dim_out); });
-        std::for_each(state_pool.begin(), state_pool.end(), [](Species& s){ std::cout<< s;});
         
         // 2. fill model pool
-        std::cout << "Initializing model pool..." << '\n';
         std::vector<models::model_ptr> model_pool;
         for(const Species& s : state_pool){
             model_pool.push_back(model_ctor(s.get_state()));
@@ -193,33 +193,30 @@ namespace evolve {
         // 3. Do the actual evolution loop
         uint32_t round = 0;
         auto avg_loss = std::numeric_limits<float>::max();
-        config::TrainConfig trainconfig{20, 2000, 0.001};
-        config::EvalConfig evalconfig{20, 1000};
-        std::vector<float> population_score(population,0);
-        std::cout << "Evolution loop begins..." << '\n';
-        while(round < max_rounds 
-              && avg_loss > target_avg_loss) {
-            // sort model vector
-            std::cout <<" --- Round "<< round << '\n';
         
+        std::vector<float> population_score(evol_config.population,0);
+        while(round < evol_config.max_rounds 
+              && avg_loss > target_avg_loss) {
+            // sort model vector        
             rewrite_model_pool(state_pool, model_pool, model_ctor);
             uint32_t i = 0;
             for(auto& model : model_pool) {
                 // this is where we want to do threading
-                train_model(model, target, trainconfig);
-                population_score[i] = score_model(model, target, evalconfig).back();
+                train_model(model, target, train_config);
+                population_score[i] = score_model(model, target, test_config).back();
                 ++i;
             }
-            state_pool = utils::sort_by(state_pool, population_score);
-            std::cout << population_score << '\n';
+            utils::sort_by(state_pool, population_score);
+
             // evolve
-            evolution_step( state_pool, pchange, std, 
-                            max_layers, min_layer_size, max_layer_size);
+            evolution_step(state_pool, evol_config);
             // pin dimensions
             std::for_each(state_pool.begin(), state_pool.end(), 
                         [n_dim_in, n_dim_out](Species& s) { s.fix_dimension(n_dim_in, n_dim_out); });
             avg_loss = utils::average(population_score);
-            std::cout << "Achieved an average loss of " << avg_loss << " | Best model achieved " << *std::min_element(population_score.begin(), population_score.end()) <<'\n';
+            //print results to std::out
+            std::cout << round << " " << avg_loss << " " 
+                      << *std::min_element(population_score.begin(), population_score.end()) <<'\n';
             ++round;
         }
         // Return last model vector

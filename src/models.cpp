@@ -1,3 +1,4 @@
+#include <stdexcept>
 #include "models.h"
 
 namespace models{
@@ -5,14 +6,24 @@ namespace models{
     MLP::MLP(const std::vector<uint32_t>& layer_widths) : 
         insize{layer_widths.front()}, outsize{layer_widths.back()}
     {
-        uint32_t l = 0;
-        for(auto it = layer_widths.cbegin(); 
-                it < layer_widths.cend() - 1; ++it) {
-            const auto n = *it, m = *(it+1);
+        if (layer_widths.empty() ){
+            // differing religions if ctors should throw
+            throw std::runtime_error("Empty Model created.");
+        } else if (layer_widths.size() == 1){
+            auto n = layer_widths.front();
             layers.emplace_back(
-                        register_module("linear_" + std::to_string(l), 
-                            torch::nn::Linear(n, m)));
-            ++l;
+                            register_module("linear_" + std::to_string(0), 
+                                torch::nn::Linear(n, n)));
+        } else {
+            uint32_t l = 0;
+            for(auto it = layer_widths.cbegin(); 
+                    it < layer_widths.cend() - 1; ++it) {
+                const auto n = *it, m = *(it+1);
+                layers.emplace_back(
+                            register_module("linear_" + std::to_string(l), 
+                                torch::nn::Linear(n, m)));
+                ++l;
+            }
         }
     }
     auto MLP::operator()(torch::Tensor& input) -> torch::Tensor {

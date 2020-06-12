@@ -8,9 +8,19 @@ namespace config{
         uint32_t n_sample;
         float lr;
     };
-    struct EvalConfig {
+    struct TestConfig {
         uint32_t n_batch;
         uint32_t n_sample;
+    };
+    struct EvolConfig {
+        uint32_t max_layers;
+        uint32_t min_layer_size;
+        uint32_t max_layer_size;
+        uint32_t max_rounds;
+        uint32_t population;
+        double pchange;
+        double std;
+        double noise_std;
     };
 }
 #endif

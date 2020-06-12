@@ -23,23 +23,27 @@ namespace utils {
     }
 
     template<typename T, typename U>
-    auto sort_by(const std::vector<T>& to_sort, 
-                 const std::vector<U>& order) -> std::vector<T> {
+    auto sort_by(std::vector<T>& to_sort, 
+                 const std::vector<U>& order)-> void {
+
         // this sort is not in place
-        std::vector<uint32_t> indices(to_sort.size());
-        std::iota(indices.begin(), indices.end(), 0);
-        std::sort(indices.begin(), indices.end(),
-                [&](int A, int B) -> bool {
-                    return order[A] < order[B];
-                }
-            );
+        std::vector<std::pair<std::size_t, U>> indices_value;
+        // create vector of pairs
+        for(std::size_t i = 0; i < order.size(); ++i){
+            indices_value.emplace_back(i, order[i]);
+        }
+        std::sort(indices_value.begin(), indices_value.end(), 
+            []( const std::pair<std::size_t, U> &a, 
+                const std::pair<std::size_t, U> &b) -> bool {
+                return a.second < b.second; // 
+        });
         std::vector<T> sorted;
-        std::transform(indices.begin(), indices.end(), std::back_inserter(sorted),
-            [to_sort](uint32_t ii) -> T {
-                return to_sort[ii];
-            }
-        );
-        return sorted;
+        for(std::size_t i = 0; i < order.size(); ++i){
+            sorted.emplace_back( std::move(to_sort[indices_value[i].first]) );
+        }
+        // to_sort is in weird state at this point - all its elements are moved-fron
+        // move sorted into to_sort
+       to_sort = std::move(sorted);
     }
 }
 #endif
