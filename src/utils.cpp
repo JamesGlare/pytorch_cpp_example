@@ -26,7 +26,8 @@ namespace utils {
         std::cout << "\n\t=> TOTAL "<< summed_sizes << " parameters." << std::endl;
     }
     auto generate_xy(const uint32_t n_batch, 
-                     const uint32_t n_dim
+                     const uint32_t n_dim,
+                     std::function<torch::Tensor(const torch::Tensor&)> func
                      ) -> std::pair<torch::Tensor, torch::Tensor> {
         auto x = torch::rand({n_batch, n_dim});
         return {x,func(x)};
@@ -34,7 +35,7 @@ namespace utils {
     /* 
      * Target function, which we try to learn here.
      */
-    auto func(const torch::Tensor& x, double std) -> torch::Tensor {
+    auto noisy_sinus(const torch::Tensor& x, double std) -> torch::Tensor {
         auto noise = std*torch::rand_like(x);
         return torch::sin(M_PI*x) + noise;
     }

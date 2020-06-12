@@ -7,7 +7,7 @@ namespace models{
     {
         uint32_t l = 0;
         for(auto it = layer_widths.cbegin(); 
-                it < layer_widths.cend() -1; ++it) {
+                it < layer_widths.cend() - 1; ++it) {
             const auto n = *it, m = *(it+1);
             layers.emplace_back(
                         register_module("linear_" + std::to_string(l), 

@@ -1,13 +1,15 @@
 #ifndef  __UTILS__
 #define __UTILS__
+#include <functional>
 #include <torch/torch.h>
 
 namespace utils {    
     auto total_size(const torch::Tensor&) -> int64_t;
     auto explain(const torch::nn::Module&) -> void;
-    auto func(const torch::Tensor&, double = 0.05) -> torch::Tensor;
-    auto generate_xy(const uint32_t, 
-                     const uint32_t // TODO make this accept a f(torch::tensor) -> torch::tensor
+    auto noisy_sinus(const torch::Tensor&, double = 0.05) -> torch::Tensor;
+    auto generate_xy(const uint32_t n_batch, 
+                     const uint32_t n_dim,
+                     std::function<torch::Tensor(const torch::Tensor&)> func
                      ) -> std::pair<torch::Tensor, torch::Tensor>;
     auto randint(uint32_t min_inc, uint32_t max_exc) -> uint32_t;
     
@@ -16,7 +18,7 @@ namespace utils {
      */
     template<typename T>
     auto average(const std::vector<T>& toavg) -> float {
-        T sum = std::accumulate(toavg.begin(), toavg.end(), T(0));
+        T sum = std::accumulate(toavg.cbegin(), toavg.cend(), T(0));
         return float(sum)/toavg.size();
     }
 
