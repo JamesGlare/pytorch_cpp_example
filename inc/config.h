@@ -21,6 +21,7 @@ namespace config{
         double pchange;
         double std;
         double noise_std;
+        float lambda;
     };
 }
 #endif

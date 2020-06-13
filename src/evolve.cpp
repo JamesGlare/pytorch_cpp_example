@@ -1,7 +1,9 @@
 #include <functional>
 #include <iostream>
-#include "evolve.h"
+#include <future>
 #include <thread>
+
+#include "evolve.h"
 
 namespace evolve {
     using namespace torch::indexing;
@@ -19,11 +21,10 @@ namespace evolve {
             optimizer.zero_grad();
             auto prediction = model->forward(batch_xy.first);
             auto loss = torch::mse_loss(prediction, batch_xy.second);
-            loss.backward(); 
+            loss.backward();
             optimizer.step();
         }
     }
-
 
     auto score_model(models::model_ptr model,
                      std::function<torch::Tensor(const torch::Tensor&)> func,
@@ -76,7 +77,8 @@ namespace evolve {
     }
 
     auto operator<<(std::ostream& os, const Species& s) -> std::ostream& {
-        os << s.state.front() << " " << s.state.back() << '\n';
+        for(auto& p : s.state)
+            os << p << ' ';
         return os;
     }
 
@@ -137,16 +139,11 @@ namespace evolve {
         // assumes score, reversed-order (highest score states first)
         uint32_t middle = state_pool.size()/2;
         for(uint32_t i = 1; i < middle; ++i) {
-            // just redraw the bottom layers except the last
+            // just redraw the bottom layers
             // by breeding the queen of the hill
             // with everyone on the hill (=top half)
             state_pool[middle - 1 + i] = Species::breed(  state_pool[0],  state_pool[i] );
         }
-        // mutate everyone except the last one which gets redrawn anyway
-        std::for_each(state_pool.begin(), state_pool.end()-1, 
-            [&evol_config](Species& s) -> void { 
-                    s.mutate(evol_config.pchange, evol_config.std);
-            });
         for(uint32_t i = 0; i < state_pool.size()-1; ++i){
             double T = i/double(state_pool.size()-1);
             state_pool[i].mutate(T*evol_config.pchange, T*evol_config.std);
@@ -184,7 +181,7 @@ namespace evolve {
         // pin input and output dimensions
         std::for_each(state_pool.begin(), state_pool.end(), 
                         [n_dim_in, n_dim_out](Species& s) { s.fix_dimension(n_dim_in, n_dim_out); });
-        
+        std::for_each(state_pool.begin(), state_pool.end(), [](Species& s){std::cout<< s << '\n';});
         // 2. fill model pool
         std::vector<models::model_ptr> model_pool;
         for(const Species& s : state_pool){
@@ -192,20 +189,40 @@ namespace evolve {
         }
         // 3. Do the actual evolution loop
         uint32_t round = 0;
-        auto avg_loss = std::numeric_limits<float>::max();
-        
+        auto avg_loss = std::numeric_limits<float>::max();        
+
         std::vector<float> population_score(evol_config.population,0);
         while(round < evol_config.max_rounds 
               && avg_loss > target_avg_loss) {
             // sort model vector        
             rewrite_model_pool(state_pool, model_pool, model_ctor);
-            uint32_t i = 0;
+
+            std::vector<std::thread> thread_pool;
+            std::vector<std::future<float>>  futures;
             for(auto& model : model_pool) {
                 // this is where we want to do threading
-                train_model(model, target, train_config);
-                population_score[i] = score_model(model, target, test_config).back();
-                ++i;
+                std::promise<float> p;
+                futures.emplace_back(p.get_future()); // same order as models
+                auto thr = std::thread(
+                        [&](std::promise<float>&& p){
+                                train_model(model, target, train_config);
+                                auto scores = score_model(model, target, test_config);
+                                // take avg loss point as score
+                                auto avg_score = utils::average(scores);
+                                auto n_pars = float(model->get_n_parameters());
+                                p.set_value(avg_score + evol_config.lambda*n_pars);
+                        }, std::move(p));
+                thread_pool.emplace_back(std::move(thr));
             }
+            // join threads
+            for(auto& thr : thread_pool){
+                if(thr.joinable())
+                    thr.join();
+            }
+            // write the futures into the pop_score_vector
+            std::transform(futures.begin(), futures.end(), 
+                          population_score.begin(), 
+                          [](std::future<float>& f){return f.get();}); // same order as futures
             utils::sort_by(state_pool, population_score);
 
             // evolve
@@ -216,9 +233,12 @@ namespace evolve {
             avg_loss = utils::average(population_score);
             //print results to std::out
             std::cout << round << " " << avg_loss << " " 
-                      << *std::min_element(population_score.begin(), population_score.end()) <<'\n';
+                      << *std::min_element(population_score.begin(), population_score.end()) 
+                      <<'\n';
             ++round;
         }
+        std::for_each(state_pool.begin(), state_pool.end(), [](Species& s){std::cout<< s << '\n';});
+        utils::sort_by(model_pool, population_score);
         // Return last model vector
         return model_pool;
     }

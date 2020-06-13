@@ -27,31 +27,31 @@ auto main(int, char**) -> int {
     const uint32_t n_dim_in = 5;
     const uint32_t n_dim_out = 5;
     constexpr config::EvolConfig evolution_config{
-                    /* max layer */  5,
+                    /* max layer */  20,
                     /* min width */  2,
-                    /* max width */  50,
-                    /* max rounds */ 30,
-                    /* population */ 30,
-                    /* depth mut prob */ 0.3,
-                    /* width change std */ 0.1
-                    };
+                    /* max width */  1000,
+                    /* max rounds */ 60,
+                    /* population */ 50,
+                    /* depth mut prob */ 0.5,
+                    /* width change std */ 0.2,
+                    /* lambda regular */ 0.01
+    };
     constexpr config::TrainConfig train_config{
                     /* batch */  20, 
                     /* sample */ 2000, 
                     /* lr */     0.001
-                };
+    };
     constexpr config::TestConfig test_config{
                     /* batch */  20, 
                     /* sample */ 1000
     };
 
-    auto models = evolve::evolve(target_loss, evolution_config, train_config, test_config,
-                                 n_dim_in, n_dim_out,
-                                 [&noise_std](const torch::Tensor& t) 
-                                 { return utils::noisy_sinus(t, noise_std); },
-                                 models::make_MLP
-                                );
-    std::for_each(models.begin(), models.end(), 
-                 [](models::model_ptr& model){ utils::explain(*model); });
+    auto models = evolve::evolve(
+                    target_loss, evolution_config, train_config, test_config,
+                    n_dim_in, n_dim_out,
+                    [&noise_std](const torch::Tensor& t) 
+                    { return utils::noisy_sinus(t, noise_std); },
+                    models::make_MLP
+                );
     return EXIT_SUCCESS;
 }

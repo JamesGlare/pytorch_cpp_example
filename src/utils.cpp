@@ -17,13 +17,13 @@ namespace utils {
      * Print sizes of layers of torch net.
      */
     auto explain(const torch::nn::Module& net) -> void {
-        int64_t summed_sizes = 0, temp = 0;
-        for(const auto& p : net.named_parameters()){
-            temp = total_size(p.value());
-            
-            summed_sizes += temp;
+        int64_t summed_sizes = 0;
+        for(const auto& p : net.named_parameters()){            
+            summed_sizes += total_size(p.value());
+            if (p.key().find("bias") == std::string::npos)
+                std::cout  << total_size(p.value()) << " | ";
         }
-        auto depth = net.named_parameters().size()/2;
+        auto depth = net.parameters().size()/2;
         std::cout << "Depth: " << depth << " | Total: "<< summed_sizes << std::endl;
     }
     auto generate_xy(const uint32_t n_batch, 
@@ -42,6 +42,9 @@ namespace utils {
     }
 
     auto randint(uint32_t min_inc, uint32_t max_exc) -> uint32_t {
+        if (min_inc >= max_exc){
+            return min_inc;
+        }
         // make sure you've set the seed using srand(int seed)
         return min_inc + rand() % max_exc;
     }

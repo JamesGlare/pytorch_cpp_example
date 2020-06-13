@@ -1,5 +1,6 @@
 #include <stdexcept>
 #include "models.h"
+#include "utils.h"
 
 namespace models{
 
@@ -40,7 +41,13 @@ namespace models{
         }
         return output;
     }
-
+    auto MLP::get_n_parameters() const -> uint32_t {
+        uint32_t n_par =0;
+        for (auto& par : parameters()){
+            n_par += utils::total_size(par);
+        }
+        return n_par;
+    }
     auto make_MLP(const std::vector<uint32_t>& layer_widths) -> model_ptr {
         return std::make_shared<MLP>(layer_widths);
     }

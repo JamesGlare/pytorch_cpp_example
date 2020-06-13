@@ -11,6 +11,7 @@ namespace models {
     virtual auto forward(torch::Tensor&) -> torch::Tensor = 0;
     virtual auto get_in_size() const -> uint32_t = 0;
     virtual auto get_out_size() const -> uint32_t = 0; 
+    virtual auto get_n_parameters() const -> uint32_t = 0;
   };
 
   struct MLP : DLModel {
@@ -27,7 +28,8 @@ namespace models {
     auto inline get_out_size() const -> uint32_t override {
       return outsize;
     };
-
+    auto get_n_parameters() const -> uint32_t override;
+    
     std::vector<torch::nn::Linear> layers{};
     const uint32_t insize;
     const uint32_t outsize;
