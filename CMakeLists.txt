@@ -27,7 +27,9 @@ endmacro()
 # torch 1.5
 ###########################################################
 cmake_minimum_required( VERSION 3.1.0 )
-
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 ###########################################################
 ## CLANG/CLANG++
 #set(CMAKE_C_COMPILER "/usr/bin/clang-6.0")
@@ -37,7 +39,7 @@ project(pytorch_cpp VERSION 0.9.0)
 if (MSVC)
         set(CMAKE_PREFIX_PATH "WINDOWS/ABSOLUTE/PATH/TO/libtorch")
 else (MSVC)
-        set(CMAKE_PREFIX_PATH "/home/james/Coding/libtorch")
+        set(CMAKE_PREFIX_PATH "/home/t-jaglad/Coding/libtorch")
 endif (MSVC)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -72,7 +74,9 @@ file(GLOB ALL_TESTS
 add_executable( "${PROJECT_NAME}" ${ALL_SRCS}) ## make sure to include all src files
 target_link_libraries("${PROJECT_NAME}" ${TORCH_LIBRARIES})
 ## Target Properties and Linking
-set_property(TARGET "${PROJECT_NAME}" PROPERTY CXX_STANDARD 14)
+#  we set global c++ to c++14 above
+# if you do no want this, uncomment below and delete above
+# set_property(TARGET "${PROJECT_NAME}" PROPERTY CXX_STANDARD 14)
 if (MSVC)
   file(GLOB TORCH_DLLS "${TORCH_INSTALL_PREFIX}/lib/*.dll")
   add_custom_command(TARGET ${PROJECT_NAME}
